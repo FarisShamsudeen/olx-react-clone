@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+            .olx-sell-btn-wrapper {
+                /* Set up the container for the button */
+                position: relative;
+                padding: 4px 18px; /* Padding for the button content */
+                border-radius: 9999px; /* Full rounded corners */
+                background-color: white; /* Inner white background */
+                box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 1.0), 0 1px 2px 0 rgba(0, 0, 0, 0.86); /* Subtle shadow */
+                cursor: pointer;
+                transition: transform 0.1s ease;
+                
+                /* Border Ring Effect */
+                /* Use a pseudo-element for the multi-colored border */
+                isolation: isolate; /* Necessary for z-index of pseudo-element */
+            }
+
+            /* Create the colorful ring using an ::before pseudo-element */
+            .olx-sell-btn-wrapper::before {
+                content: '';
+                position: absolute;
+                top: -3px; /* Adjust based on desired border thickness */
+                left: -3px;
+                right: -3px;
+                bottom: -3px;
+                border-radius: 9999px; /* Match button curvature */
+                z-index: -1; /* Place behind the button content */
+                
+                /* Refined Gradient Stops to match the darker style */
+                background: conic-gradient(
+                    #42b3ad 0deg,   /* Dark Teal/Dark Blue (starts at the top) */
+                    #42b3ad 70deg,
+                    #0078fa 70deg, /* Teal/Cyan (top right arc) */
+                    #0078fa 180deg,
+                    #FFC900 180deg, /* Yellow (bottom right arc) */
+                    #FFC900 290deg,
+                    #42b3ad 290deg, /* Dark Blue/Black (bottom left arc, meeting the start) */
+                    #42b3ad 360deg
+                );
+            }
+            
+            /* Inner ring/border cleanup: Use the button background to mask the gradient */
+            .olx-sell-btn-wrapper::after {
+                content: '';
+                position: absolute;
+                top: 2px; /* Inner margin to show the colored ring */
+                left: 2px;
+                right: 2px;
+                bottom: 2px;
+                border-radius: 9999px;
+                background-color: white; /* Mask the center of the gradient */
+                z-index: -1;
+            }
+
+            .olx-sell-btn-wrapper:hover {
+                transform: scale(1.05);
+            }
