@@ -50,17 +50,72 @@ const MyAds = () => {
     setErrors({});
   };
 
-  // 🔹 Input Change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // 🔹 Field-by-field validation
+  const validateField = (name: string, value: string) => {
+    let message = "";
+
+    switch (name) {
+      case "title":
+        if (!value.trim()) message = "Title is required.";
+        else if (value.length < 3) message = "Title must be at least 3 characters.";
+        break;
+
+      case "description":
+        if (!value.trim()) message = "Description is required.";
+        else if (value.length < 10)
+          message = "Description must be at least 10 characters.";
+        break;
+
+      case "price":
+        const price = Number(value);
+        if (isNaN(price) || price <= 0)
+          message = "Enter a valid positive price.";
+        break;
+
+      case "category":
+        if (!value.trim()) message = "Category is required.";
+        break;
+
+      case "file":
+        if (!file) message = "Please upload an image.";
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: message }));
   };
 
+  // 🔹 Handle Input Changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    validateField(name, value);
+  };
+
+  // 🔹 Handle File Change + Validate image
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+
+      // Validate type
+      if (!selectedFile.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, file: "Only image files are allowed." }));
+        setFile(null);
+        return;
+      }
+
+      // Validate size
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, file: "Image must be under 2MB." }));
+        setFile(null);
+        return;
+      }
+
+      setFile(selectedFile);
+      setErrors((prev) => ({ ...prev, file: "" })); // instantly remove error
     }
   };
 
+  // 🔹 Full validation before submit
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
@@ -76,10 +131,13 @@ const MyAds = () => {
 
     if (!form.category.trim()) newErrors.category = "Category is required.";
 
+    if (!file && !form.image) newErrors.file = "Please upload an image.";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // 🔹 Upload image
   const uploadImage = async (): Promise<string | null> => {
     if (!file) return form.image;
     try {
@@ -103,6 +161,7 @@ const MyAds = () => {
     }
   };
 
+  // 🔹 Save Changes
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -160,13 +219,11 @@ const MyAds = () => {
 
                 <div className="p-4">
                   <h2 className="text-lg font-semibold truncate">{item.title}</h2>
-                  <p className="text-blue-600 font-bold text-xl mt-1">
-                    ₹ {item.price}
-                  </p>
+                  <p className="text-blue-600 font-bold text-xl mt-1">₹ {item.price}</p>
                   <p className="text-gray-500 text-sm mt-1">{item.category}</p>
                 </div>
 
-                <div className="absolute inset-0 bg-black/75 bg-opacity-40 flex justify-center items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute inset-0 bg-black/75 flex justify-center items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <button
                     onClick={() => handleEdit(item)}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-md transition-all"
@@ -186,10 +243,11 @@ const MyAds = () => {
         )}
       </main>
 
+      {/* 🔹 Edit Modal (Horizontal Layout) */}
       {editingAd && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-3 sm:p-6">
           <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl p-6 relative flex flex-col sm:flex-row gap-6 transition-all duration-300">
-            {/* Left Side: Image & Upload */}
+            {/* Left Side: Image */}
             <div className="flex-1 flex flex-col items-center justify-center border-r border-gray-200 pr-4">
               <h3 className="text-lg font-semibold text-gray-700 mb-3">Product Image</h3>
 
@@ -218,10 +276,11 @@ const MyAds = () => {
                     Change Image
                   </span>
                 </label>
+                {errors.file && <p className="text-red-600 text-sm mt-2">{errors.file}</p>}
               </div>
             </div>
 
-            {/* Right Side: Form Fields */}
+            {/* Right Side: Form */}
             <div className="flex-1 flex flex-col">
               <h2 className="text-2xl font-bold mb-4 text-gray-800 text-center sm:text-left">
                 Edit Your Ad
@@ -310,10 +369,11 @@ const MyAds = () => {
                   <button
                     type="submit"
                     disabled={uploading}
-                    className={`px-4 py-2 rounded-md text-white font-semibold ${uploading
+                    className={`px-4 py-2 rounded-md text-white font-semibold ${
+                      uploading
                         ? "bg-gray-400"
                         : "bg-blue-600 hover:bg-blue-700"
-                      }`}
+                    }`}
                   >
                     {uploading ? "Saving..." : "Save Changes"}
                   </button>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase/setup";
 import axios from "axios";
@@ -18,20 +18,72 @@ const CreateAd = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const navigate = useNavigate();
 
-  // Input change handler
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // 🔹 Validate single field dynamically
+  const validateField = (name: string, value: string) => {
+    let message = "";
+
+    switch (name) {
+      case "title":
+        if (!value.trim()) message = "Title is required.";
+        else if (value.length < 3) message = "Title must be at least 3 characters.";
+        break;
+
+      case "description":
+        if (!value.trim()) message = "Description is required.";
+        else if (value.length < 10)
+          message = "Description must be at least 10 characters.";
+        break;
+
+      case "price":
+        const price = Number(value);
+        if (isNaN(price) || price <= 0)
+          message = "Enter a valid positive price.";
+        break;
+
+      case "category":
+        if (!value.trim()) message = "Category is required.";
+        break;
+
+      case "file":
+        if (!file) message = "Please upload an image.";
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: message }));
   };
 
-  // File input change
+  // 🔹 Handle text input changes with instant validation
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+    validateField(name, value);
+  };
+
+  // 🔹 Handle image file change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setErrors({ ...errors, file: "" });
+      const selectedFile = e.target.files[0];
+
+      // Validate file type
+      if (!selectedFile.type.startsWith("image/")) {
+        setErrors((prev) => ({ ...prev, file: "Only image files are allowed." }));
+        setFile(null);
+        return;
+      }
+
+      // Validate file size (< 2MB)
+      if (selectedFile.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, file: "Image must be under 2MB." }));
+        setFile(null);
+        return;
+      }
+
+      setFile(selectedFile);
+      setErrors((prev) => ({ ...prev, file: "" })); // remove error instantly
     }
   };
 
-  // Validation
+  // 🔹 Validate all fields before submit
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
@@ -47,11 +99,13 @@ const CreateAd = () => {
 
     if (!form.category.trim()) newErrors.category = "Category is required.";
 
+    if (!file && !form.image) newErrors.file = "Please upload an image.";
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Upload image to Cloudinary
+  // 🔹 Upload image to Cloudinary
   const uploadImage = async (): Promise<string | null> => {
     if (!file) return form.image || null;
     try {
@@ -74,7 +128,7 @@ const CreateAd = () => {
     }
   };
 
-  // Submit ad
+  // 🔹 Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -210,15 +264,17 @@ const CreateAd = () => {
                   />
                 )}
               </div>
+              {errors.file && <p className="text-red-600 text-sm mt-1">{errors.file}</p>}
             </div>
 
             {/* SUBMIT */}
             <button
               disabled={uploading}
-              className={`py-3 rounded-md text-white font-semibold text-base sm:text-lg transition-all ${uploading
+              className={`py-3 rounded-md text-white font-semibold text-base sm:text-lg transition-all ${
+                uploading
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"
-                }`}
+              }`}
             >
               {uploading ? "Uploading..." : "Post Ad"}
             </button>

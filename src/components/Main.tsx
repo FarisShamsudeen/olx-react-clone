@@ -43,7 +43,7 @@ const Main = () => {
       setCurrentUser(user);
       setLoading(false);
     });
-    return () => unsubscribe(); // Cleanup subscription on unmount
+    return () => unsubscribe(); 
   }, []);
 
 

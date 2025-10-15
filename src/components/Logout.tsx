@@ -14,7 +14,9 @@ const Logout = ({ setLogoutPop }: LogoutProps) => {
     try {
       await signOut(auth);
       setLogoutPop(false);
-      navigate("/"); // Redirect home after logout
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/";
       console.log("User signed out successfully.");
     } catch (error) {
       console.error("Error signing out:", error);
